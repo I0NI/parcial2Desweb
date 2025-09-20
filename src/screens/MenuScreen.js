@@ -1,22 +1,22 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, FlatList, StyleSheet, TextInput, RefreshControl, TouchableOpacity } from "react-native";
-import MealCard from "../components/MealCard";
+import React, { useEffect, useState } from 'react';
+import { View, useWindowDimensions, Platform } from 'react-native';
+import { Text, FAB, ActivityIndicator } from 'react-native-paper';
+import * as Animatable from 'react-native-animatable';
+import MealCard from '../components/MealCard';
 
-const URL = "https://www.themealdb.com/api/json/v1/1/search.php?f=a";
+const URL = 'https://www.themealdb.com/api/json/v1/1/search.php?f=a';
 
 export default function MenuScreen({ navigation }) {
-  const [meals, setMeals] = useState([]);
-  const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [meals, setMeals] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { width } = useWindowDimensions();
+  const maxW = Math.min(width - 24, 960); // contenedor centrado en web
 
   const fetchMeals = async () => {
     try {
-      setLoading(true);
       const res = await fetch(URL);
       const json = await res.json();
       setMeals(json.meals || []);
-    } catch (e) {
-      setMeals([]);
     } finally {
       setLoading(false);
     }
@@ -24,49 +24,50 @@ export default function MenuScreen({ navigation }) {
 
   useEffect(() => { fetchMeals(); }, []);
 
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    return s ? meals.filter(m => m.strMeal.toLowerCase().includes(s)) : meals;
-  }, [q, meals]);
+  if (loading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator animating size="large" />
+        <Text style={{ marginTop: 12 }}>Cargando menú…</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>🍽️ Menú de Recetas</Text>
+    <View style={{ flex: 1, backgroundColor: '#F6F4F4' }}>
+      <View style={{ alignItems: 'center', paddingTop: 12 }}>
+        <Animatable.Text
+          animation="fadeInDown"
+          duration={450}
+          style={{ textAlign: 'center', fontWeight: '900', fontSize: 20, color: '#352F2F' }}
+        >
+          🍽️ Menú de Recetas
+        </Animatable.Text>
 
-      {/* CREATIVIDAD: buscador */}
-      <TextInput
-        placeholder="Buscar receta..."
-        value={q}
-        onChangeText={setQ}
-        style={styles.search}
-        autoCapitalize="none"
-        placeholderTextColor="#777"
-      />
+        <View style={{ width: maxW, paddingHorizontal: 12, paddingTop: 6 }}>
+          {meals?.map((m, i) => (
+            <MealCard key={m.idMeal} meal={m} index={i} onPress={() => navigation.navigate('Random')} />
+          ))}
+          <View style={{ height: 96 }} />
+        </View>
+      </View>
 
-      <FlatList
-        data={filtered}
-        keyExtractor={(item) => item.idMeal}
-        renderItem={({ item }) => (
-          <MealCard meal={item} onPress={() => navigation.navigate("Random")} />
-        )}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchMeals} />}
-        ListEmptyComponent={!loading && (<Text style={styles.empty}>Sin resultados</Text>)}
-        contentContainerStyle={{ paddingBottom: 16 }}
-      />
-
-      {/* Botón flotante para ir al random directamente */}
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate("Random")}>
-        <Text style={styles.fabTxt}>🎲</Text>
-      </TouchableOpacity>
+      {/* FAB flotante con etiqueta */}
+      <View
+        pointerEvents="box-none"
+        style={{
+          position: 'absolute',
+          right: 16,
+          bottom: Platform.select({ ios: 28, android: 24, default: 24 }),
+        }}
+      >
+        <FAB
+          icon="dice-5-outline"
+          label="Random"
+          style={{ backgroundColor: '#7A0A0A' }}
+          onPress={() => navigation.navigate('Random')}
+        />
+      </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7F3F2", padding: 12 },
-  header: { fontSize: 20, fontWeight: "800", textAlign: "center", marginBottom: 10, color: "#3A2D2D" },
-  search: { backgroundColor: "#fff", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 8, elevation: 2, borderWidth: 0.5, borderColor: "#eee" },
-  empty: { textAlign: "center", marginTop: 20, color: "#555" },
-  fab: { position: "absolute", right: 16, bottom: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: "#8B0000", alignItems: "center", justifyContent: "center", elevation: 6 },
-  fabTxt: { color: "#fff", fontSize: 22 },
-});

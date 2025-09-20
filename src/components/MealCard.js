@@ -1,41 +1,31 @@
-import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import React from 'react';
+import * as Animatable from 'react-native-animatable';
+import { Card, Text, Avatar, IconButton } from 'react-native-paper';
+import { View } from 'react-native';
 
-export default function MealCard({ meal, onPress }) {
+export default function MealCard({ meal, onPress, index = 0 }) {
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
-      <Image source={{ uri: meal.strMealThumb }} style={styles.image} />
-      <View style={{ flex: 1 }}>
-        <Text numberOfLines={1} style={styles.title}>{meal.strMeal}</Text>
-        <Text style={styles.badge}>{meal.strCategory || "Meal"}</Text>
-      </View>
-    </TouchableOpacity>
+    <Animatable.View
+      animation="fadeInUp"
+      delay={Math.min(index * 70, 500)}
+      duration={420}
+      useNativeDriver
+      style={{ width: '100%' }}
+    >
+      <Card mode="elevated" onPress={onPress} style={{ marginVertical: 8, borderRadius: 18 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12 }}>
+          <Avatar.Image size={56} source={{ uri: meal.strMealThumb }} />
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text variant="titleMedium" style={{ fontWeight: '800' }} numberOfLines={1}>
+              {meal.strMeal}
+            </Text>
+            <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+              {meal.strCategory || 'Meal'}
+            </Text>
+          </View>
+          <IconButton icon="chevron-right" size={26} iconColor="#C1C1C1" />
+        </View>
+      </Card>
+    </Animatable.View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 10,
-    marginVertical: 6,
-    elevation: 3
-  },
-  image: {
-    width: 74,
-    height: 74,
-    borderRadius: 10,
-    marginRight: 12
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4
-  },
-  badge: {
-    fontSize: 12,
-    color: "#8B0000",
-    fontWeight: "600"
-  }
-});
